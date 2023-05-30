@@ -1,20 +1,10 @@
 {
   "canisters": {
-    "sd_backend": {
-      "main": "src/sd_backend/main.mo",
-      "type": "motoko"
-    },
     "sd_frontend": {
-      "dependencies": [
-        "sd_backend"
-      ],
       "frontend": {
-        "entrypoint": "src/sd_frontend/src/index.html"
+        "entrypoint": "src/frontend/src/index.html"
       },
-      "source": [
-        "src/sd_frontend/assets",
-        "dist/sd_frontend/"
-      ],
+      "source": ["dist/frontend/"],
       "type": "assets"
     }
   },
