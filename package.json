@@ -2,6 +2,7 @@
   "name": "@emcicpmonorepo/sd",
   "version": "0.2.0",
   "description": "Internet Computer starter application",
+  "license": "MPL-2.0",
   "keywords": [
     "Internet Computer",
     "Motoko",
