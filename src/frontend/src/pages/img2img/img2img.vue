@@ -30,17 +30,17 @@
             </n-form-item>
             <n-form-item path="width" label="Width">
               <n-space vertical style="width: 100%">
-                <n-slider v-model:value="formData.width" :step="1" :min="128" :max="2048" />
-                <n-input-number v-model:value="formData.width" size="small" :min="128" :max="2048" />
+                <n-slider v-model:value="formData.width" :min="128" :max="1024" :step="128" />
+                <n-input-number v-model:value="formData.width" size="small" :min="128" :max="1024" :step="128" />
               </n-space>
             </n-form-item>
             <n-form-item path="height" label="Height">
               <n-space vertical style="width: 100%">
-                <n-slider v-model:value="formData.height" :step="1" :min="128" :max="2048" />
-                <n-input-number v-model:value="formData.height" size="small" :min="128" :max="2048" />
+                <n-slider v-model:value="formData.height" :min="128" :max="1024" :step="128" />
+                <n-input-number v-model:value="formData.height" size="small" :min="128" :max="1024" :step="128" />
               </n-space>
             </n-form-item>
-          </n-form>
+          </n-form> 
           <n-space :wrap-item="false" :wrap="false" align="center" justify="center" :size="[24, 0]">
             <n-button :block="true" :disabled="isExeuting" @click="onPressReset" style="flex: 1">Reset</n-button>
             <template v-if="!privateKey">

@@ -15,6 +15,7 @@ export const useUserStore = defineStore('user', () => {
   });
   const network = ref('https://oregon.edgematrix.xyz');
   const peerId = ref('16Uiu2HAm14xAsnJHDqnQNQ2Qqo1SapdRk9j8mBKY6mghVDP9B9u5');
+  const nodeList = ref<any[]>([]);
   const nodeStore = useNodeStore();
   const siderStore = useSiderStore();
   return {
@@ -22,6 +23,7 @@ export const useUserStore = defineStore('user', () => {
     title,
     network,
     peerId,
+    nodeList,
     setTitle(str: string) {
       title.value = str;
     },
@@ -33,6 +35,17 @@ export const useUserStore = defineStore('user', () => {
         siderStore.initMenus(menus);
       }
       return { _result: 0, nodeId: _nodeId };
+    },
+    async addNode(node: any) {
+      const atNodeListIndex = nodeList.value.findIndex((item) => item.nodeId === node.nodeId);
+      if (atNodeListIndex === -1) {
+        nodeList.value.push({
+          nodeId: node.nodeId,
+          nodeName: Utils.formatAddress(node.nodeId, 6),
+          modelName: node.modelName,
+        });
+        Utils.setLocalStorage('emcsd.nodelist', nodeList.value);
+      }
     },
     async login(params = { privateKey: '', publicKey: '' }) {
       const privateKey = params.privateKey;
@@ -76,11 +89,27 @@ export const useUserStore = defineStore('user', () => {
       if (_nodeId) {
         peerId.value = _nodeId;
       }
-      return { user: _user, nodeId: _nodeId };
+
+      let _nodeList: any[] = Utils.getLocalStorage('emcsd.nodelist');
+      if (!_nodeList) {
+        const _d = [
+          { nodeId: '16Uiu2HAm14xAsnJHDqnQNQ2Qqo1SapdRk9j8mBKY6mghVDP9B9u5', modelName: 'anythingMidjourneyV4' },
+          { nodeId: '16Uiu2HAkwaui8LKmt4B9XkhB5ET5tbSApVB89awUvrXSfPh6KFy5', modelName: 'realisticVision' },
+          // '16Uiu2HAkwaui8LKmt4B9XkhB5ET5tbSApVB89awUvrXSfPh6KFy5',
+        ];
+        _nodeList = _d.map((item) => ({
+          nodeId: item.nodeId,
+          nodeName: Utils.formatAddress(item.nodeId, 6),
+          modelName: item.modelName,
+        }));
+      }
+      nodeList.value = _nodeList;
+      return { user: _user, nodeId: _nodeId, nodeList: _nodeList };
     },
   };
 });
 export const useNodeStore = defineStore('node', () => {
+  //node info
   const name = ref('');
   const startUpTime = ref('');
   const runTime = ref('');

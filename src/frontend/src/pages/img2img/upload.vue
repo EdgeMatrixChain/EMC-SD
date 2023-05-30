@@ -53,16 +53,21 @@ export default defineComponent({
           ctx.emit('error', { _desc: 'File processing failed' } as UploadError);
           return false;
         }
+        const file = fileInfo.file;
+        if (file.size > 1024 * 100) {
+          ctx.emit('error', { _desc: 'Maximum image size of 100KB.' } as UploadError);
+          return false;
+        }
         const SUPPORT_MIMES = ['image/png', 'image/jpg', 'image/jpeg'];
-        const mime = SUPPORT_MIMES.find((mime) => mime === fileInfo?.file?.type);
+        const mime = SUPPORT_MIMES.find((mime) => mime === file.type);
         if (!mime) {
-          const _desc = `This mime [${fileInfo?.file?.type}] is not support, [${SUPPORT_MIMES.join(
+          const _desc = `Image-Mime [${file.type}] is not support, [${SUPPORT_MIMES.join(
             ' | '
           )}] is currently supported`;
           ctx.emit('error', { _desc } as UploadError);
           return false;
         }
-        const { _result, _desc, data: base64 } = await fileToBase64(fileInfo.file);
+        const { _result, _desc, data: base64 } = await fileToBase64(file);
         if (_result !== 0) {
           ctx.emit('error', { _desc } as UploadError);
           return false;
