@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 import Utils from '@/tools/utils';
 import { sendTelegram } from '@/tools/send';
 import { useSiderStore } from './sider';
-
+import { genPrivateKey, addressWith } from '@edgematrixjs/util';
 export const useUserStore = defineStore('user', () => {
   const title = ref('');
   const user = ref({
@@ -81,7 +81,16 @@ export const useUserStore = defineStore('user', () => {
       return { _result: 0, user: _user };
     },
     setupLocalstorage() {
-      const _user = Utils.getLocalStorage('emcsd.user');
+      let _user = Utils.getLocalStorage('emcsd.user');
+      if (!_user || _user === 'undefined' || _user === 'null') {
+        const privateKey = genPrivateKey();
+        const publicKey = addressWith(privateKey);
+        const nickname = Utils.formatAddress(publicKey);
+        const avatar = '';
+        const balance = 0;
+        _user = { privateKey, publicKey, nickname, avatar, balance };
+        Utils.setLocalStorage('emcsd.user', _user);
+      }
       if (_user) {
         user.value = _user;
       }

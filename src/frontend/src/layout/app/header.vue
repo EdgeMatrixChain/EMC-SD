@@ -1,7 +1,7 @@
 <template>
   <n-space class="header" align="center" justify="space-between">
     <span class="title">{{ title }}</span>
-    <template v-if="!isSignIn">
+    <!-- <template v-if="!isSignIn">
       <n-button strong secondary type="primary" :disabled="isLoading" @click="onPressSignIn" style="font-weight: bold">
         <template #icon>
           <n-icon size="20">
@@ -13,7 +13,7 @@
     </template>
     <template v-else>
       <HeaderUser @menu="onUserMenu" />
-    </template>
+    </template> -->
   </n-space>
   <n-modal v-model:show="isVisibleSignIn" :mask-closable="false">
     <SignIn @signin="onSignInSuccess" @cancel="onSignInCancel" />
