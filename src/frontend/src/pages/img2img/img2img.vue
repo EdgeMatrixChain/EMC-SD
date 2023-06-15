@@ -1,6 +1,10 @@
 <template>
   <div class="page">
-    <template v-if="errorCode > 0">
+    <template v-if="errorCode === 1">
+      <span style="margin-right: 4px">{{ errorText }}</span>
+      <n-a @click="onPressRefresh"> refresh </n-a>
+    </template>
+    <template v-else-if="errorCode > 0">
       <span>{{ errorText }}</span>
     </template>
     <template v-else-if="errorCode === 0">
@@ -114,6 +118,7 @@
 <script lang="ts">
 import { defineComponent, computed, ref, watch } from 'vue';
 import {
+  NA,
   NText,
   NP,
   NIcon,
@@ -158,6 +163,7 @@ interface FormDataType {
 export default defineComponent({
   name: 'Img2Img',
   components: {
+    NA,
     NText,
     NP,
     NIcon,
@@ -219,7 +225,7 @@ export default defineComponent({
           errorText.value = '';
         } else {
           errorCode.value = 1;
-          errorText.value = 'Not found api config';
+          errorText.value = 'Not found api config maybe network is unstable. You can try';
         }
       },
       { immediate: true }
@@ -236,6 +242,9 @@ export default defineComponent({
       insideResponseInfo,
       isExeuting,
       isVisibleSignIn,
+      onPressRefresh() {
+        window.location.reload();
+      },
       onUploadError({ _desc }: UploadError) {
         message.error(_desc);
       },
@@ -275,6 +284,7 @@ export default defineComponent({
         const heightKey = apiConfig.mappings['height'];
         body[heightKey] = height;
         console.info(`request body: `, body);
+        body['steps'] = 20;
         const input: any = {
           path: apiConfig.path,
           method: apiConfig.method,

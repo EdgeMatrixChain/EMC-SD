@@ -126,7 +126,7 @@ export const useNodeStore = defineStore('node', () => {
   const tags = ref<any[]>([]);
   const sdModelId = ref('');
   const idl = ref<any[]>([]);
-  const defaultPrivatekey = '0xe68fdecddc8db679420f0b3fb7818354e282b4c1f685ade54b7a3e79ddcb952d';
+  const defaultPrivatekey = genPrivateKey();
   const queryNodeInfo = async (_network: string, _nodeId: string, _privateKey?: string) => {
     const { _result, _desc, response } = await sendTelegram({
       network: _network,

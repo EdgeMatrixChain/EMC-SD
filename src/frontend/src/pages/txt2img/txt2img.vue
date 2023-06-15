@@ -1,6 +1,10 @@
 <template>
   <div class="page">
-    <template v-if="errorCode > 0">
+    <template v-if="errorCode === 1">
+      <span style="margin-right: 4px">{{ errorText }}</span>
+      <n-a @click="onPressRefresh"> refresh </n-a>
+    </template>
+    <template v-else-if="errorCode > 0">
       <span>{{ errorText }}</span>
     </template>
     <template v-else-if="errorCode === 0">
@@ -27,13 +31,13 @@
             </n-form-item>
             <n-form-item path="width" label="Width">
               <n-space vertical style="width: 100%">
-                <n-slider v-model:value="formData.width"  :min="128" :max="1024" :step="128" />
+                <n-slider v-model:value="formData.width" :min="128" :max="1024" :step="128" />
                 <n-input-number v-model:value="formData.width" size="small" :min="128" :max="1024" :step="128" />
               </n-space>
             </n-form-item>
             <n-form-item path="height" label="Height">
               <n-space vertical style="width: 100%">
-                <n-slider v-model:value="formData.height"  :min="128" :max="1024" :step="128" />
+                <n-slider v-model:value="formData.height" :min="128" :max="1024" :step="128" />
                 <n-input-number v-model:value="formData.height" size="small" :min="128" :max="1024" :step="128" />
               </n-space>
             </n-form-item>
@@ -111,6 +115,7 @@
 <script lang="ts">
 import { defineComponent, onMounted, ref, watch, computed } from 'vue';
 import {
+  NA,
   NIcon,
   NCard,
   NForm,
@@ -147,6 +152,7 @@ interface FormDataType {
 export default defineComponent({
   name: 'Txt2Img',
   components: {
+    NA,
     NIcon,
     NCard,
     NForm,
@@ -199,7 +205,7 @@ export default defineComponent({
           errorText.value = '';
         } else {
           errorCode.value = 1;
-          errorText.value = 'Not found api config';
+          errorText.value = 'Not found api config maybe network is unstable. You can try';
         }
       },
       { immediate: true }
@@ -216,6 +222,9 @@ export default defineComponent({
       insideResponseInfo,
       isExeuting,
       isVisibleSignIn,
+      onPressRefresh() {
+        window.location.reload();
+      },
       onPressReset() {
         formData.value.prompt = '';
         formData.value.negativePrompt = '';
@@ -248,6 +257,8 @@ export default defineComponent({
         body[widthKey] = width;
         const heightKey = apiConfig.mappings['height'];
         body[heightKey] = height;
+
+        body['steps'] = 20;
 
         const input: any = {
           path: apiConfig.path,

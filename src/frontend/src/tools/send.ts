@@ -4,6 +4,7 @@ import { Http } from '@/tools/http';
 
 const chainId = 2;
 const debug = false;
+const totallyWaitTime = 2000;
 
 export const sendTelegram = async ({ network, peerId, privateKey, endpoint, input }: TelegramParameters) => {
   const http = Http.getInstance();
@@ -41,10 +42,17 @@ export const sendTelegram = async ({ network, peerId, privateKey, endpoint, inpu
   }
   const serialized = signed.serialize();
   const hexSerialized = addHexPrefix(serialized.toString('hex'));
+  const beforeTime = new Date().getTime();
   const teleResp = await http.postJSON({
     url: network,
     data: { jsonrpc: '2.0', id: 1, method: 'edge_sendRawTelegram', params: [hexSerialized] },
   });
+  const diffTime = new Date().getTime() - beforeTime;
+  const waitTime = totallyWaitTime - diffTime;
+  if (waitTime > 0) {
+    console.info(`waitting ${waitTime} times`);
+    await new Promise<void>((resolve) => setTimeout(() => resolve(), waitTime));
+  }
 
   if (!teleResp || !teleResp.data) {
     return { _result: 1, _desc: "It's network or server error" };
