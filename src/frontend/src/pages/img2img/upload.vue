@@ -54,8 +54,8 @@ export default defineComponent({
           return false;
         }
         const file = fileInfo.file;
-        if (file.size > 1024 * 100) {
-          ctx.emit('error', { _desc: 'Maximum image size of 100KB.' } as UploadError);
+        if (file.size > 1024 * 400) {
+          ctx.emit('error', { _desc: 'Maximum image size of 400KB.' } as UploadError);
           return false;
         }
         const SUPPORT_MIMES = ['image/png', 'image/jpg', 'image/jpeg'];
