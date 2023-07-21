@@ -2,7 +2,7 @@
   "canisters": {
     "sd_frontend": {
       "frontend": {
-        "entrypoint": "src/frontend/src/index.html"
+        "entrypoint": "src/frontend/public/index.html"
       },
       "source": ["dist/frontend/"],
       "type": "assets"
