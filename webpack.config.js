@@ -97,10 +97,11 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         {
-          from: `src/${frontendDirectory}/public/*`,
-          to: '[name][ext]',
+          from: `src/${frontendDirectory}/public`,
           noErrorOnMissing: true,
-          filter: (resourcePath) => resourcePath.indexOf('index.html') === -1,
+          filter: (resourcePath) => {
+            return resourcePath.indexOf('index.html') === -1;
+          },
         },
       ],
     }),
