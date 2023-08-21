@@ -21,41 +21,34 @@
   </n-layout>
 </template>
 
-<script>
+<script lang="ts">
 import { ref, onMounted, defineComponent, nextTick } from 'vue';
-import { useLoadingBar, NLayout, NLayoutSider, NLayoutHeader, NLayoutContent, NSpin } from 'naive-ui';
-import Sider from '@/layout/app/sider';
-import Header from '@/layout/app/header';
+import { NLayout, NLayoutSider, NLayoutHeader, NLayoutContent, NSpin } from 'naive-ui';
+import Sider from '@/layout/app/sider.vue';
+import Header from '@/layout/app/header.vue';
 import { useUserStore, useNodeStore } from '@/stores/app';
-import { useSiderStore } from '@/stores/sider';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 export default defineComponent({
   name: 'Layout',
   components: { NLayout, NLayoutSider, NLayoutHeader, NLayoutContent, Sider, Header, NSpin },
   setup() {
     const ready = ref(false);
     const router = useRouter();
-    const route = useRoute();
     const userStore = useUserStore();
-    const siderStore = useSiderStore();
     const nodeStore = useNodeStore();
-
     onMounted(async () => {
       let { user, nodeId } = userStore.setupLocalstorage();
+      //useRoute() back route query is undefined
+      let route = router.resolve(location.hash.substring(1));
       let _queryNodeId = route.query.nodeid;
       if (_queryNodeId) {
-        nodeId = _queryNodeId;
-        userStore.setNodeId(nodeId);
+        nodeId = _queryNodeId as string;
       } else if (!nodeId) {
         nodeId = '16Uiu2HAm14xAsnJHDqnQNQ2Qqo1SapdRk9j8mBKY6mghVDP9B9u5';
-        userStore.setNodeId(nodeId);
       }
-      if (nodeId) {
-        const menus = await nodeStore.init(userStore.network, nodeId);
-        siderStore.initMenus(menus);
-      } else {
-        router.replace({ name: 'home' });
-      }
+      userStore.setNodeId(nodeId);
+      await nodeStore.init(userStore.network, nodeId, user.privateKey);
+
       ready.value = true;
     });
     return {

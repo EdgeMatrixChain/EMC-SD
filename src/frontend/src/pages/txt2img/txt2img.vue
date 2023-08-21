@@ -11,36 +11,75 @@
       <div class="page-forms">
         <n-card title="Generate image">
           <n-form ref="formRef" :model="formData">
-            <n-form-item path="prompt" label="Prompt">
-              <n-input
-                type="textarea"
-                v-model:value="formData.prompt"
-                placeholder="List the things you want in the image (e.g. bubbles,tank)"
-                :autosize="true"
-                style="min-height: 140px"
-              />
-            </n-form-item>
-            <n-form-item path="negativePrompt" label="Negative Prompt">
-              <n-input
-                type="textarea"
-                v-model:value="formData.negativePrompt"
-                placeholder="List the things to remove from the image (e.g. fog, fingers)"
-                :autosize="true"
-                style="min-height: 80px"
-              />
-            </n-form-item>
-            <n-form-item path="width" label="Width">
-              <n-space vertical style="width: 100%">
-                <n-slider v-model:value="formData.width" :min="128" :max="1024" :step="128" />
-                <n-input-number v-model:value="formData.width" size="small" :min="128" :max="1024" :step="128" />
-              </n-space>
-            </n-form-item>
-            <n-form-item path="height" label="Height">
-              <n-space vertical style="width: 100%">
-                <n-slider v-model:value="formData.height" :min="128" :max="1024" :step="128" />
-                <n-input-number v-model:value="formData.height" size="small" :min="128" :max="1024" :step="128" />
-              </n-space>
-            </n-form-item>
+            <n-grid :cols="24" :x-gap="24">
+              <n-form-item-gi :span="24" path="prompt" label="Prompt">
+                <n-input
+                  type="textarea"
+                  v-model:value="formData.prompt"
+                  placeholder="List the things you want in the image (e.g. bubbles,tank)"
+                  :autosize="true"
+                  style="min-height: 140px"
+                />
+              </n-form-item-gi>
+              <n-form-item-gi :span="24" path="negativePrompt" label="Negative Prompt">
+                <n-input
+                  type="textarea"
+                  v-model:value="formData.negativePrompt"
+                  placeholder="List the things to remove from the image (e.g. fog, fingers)"
+                  :autosize="true"
+                  style="min-height: 80px"
+                />
+              </n-form-item-gi>
+              <n-form-item-gi :span="24" path="sampler" label="Sampler">
+                <n-select
+                  v-model:value="formData.sampler"
+                  label-field="label"
+                  value-field="val"
+                  placeholder="Select"
+                  :options="samplerOptions"
+                />
+              </n-form-item-gi>
+              <n-form-item-gi :span="24" path="steps" label="Steps">
+                <n-space vertical style="width: 100%">
+                  <n-slider v-model:value="formData.steps" :min="1" :max="150" :step="1" />
+                  <n-input-number v-model:value="formData.steps" size="small" :min="1" :max="150" :step="1" />
+                </n-space>
+              </n-form-item-gi>
+              <n-form-item-gi :span="12" path="width" label="Width">
+                <n-space vertical style="width: 100%">
+                  <n-slider v-model:value="formData.width" :min="128" :max="1024" :step="128" />
+                  <n-input-number v-model:value="formData.width" size="small" :min="128" :max="1024" :step="128" />
+                </n-space>
+              </n-form-item-gi>
+              <n-form-item-gi :span="12" path="height" label="Height">
+                <n-space vertical style="width: 100%">
+                  <n-slider v-model:value="formData.height" :min="128" :max="1024" :step="128" />
+                  <n-input-number v-model:value="formData.height" size="small" :min="128" :max="1024" :step="128" />
+                </n-space>
+              </n-form-item-gi>
+              <n-form-item-gi :span="24" path="seed" label="Seed">
+                <n-input-number
+                  v-model:value="formData.seed"
+                  size="small"
+                  :min="-1"
+                  :max="99999999999"
+                  :step="1"
+                  style="width: 100%"
+                />
+              </n-form-item-gi>
+              <n-form-item-gi :span="12" path="cfgScale" label="CFG Scale">
+                <n-space vertical style="width: 100%">
+                  <n-slider v-model:value="formData.cfgScale" :min="1" :max="30" :step="0.5" />
+                  <n-input-number v-model:value="formData.cfgScale" size="small" :min="1" :max="30" :step="0.5" />
+                </n-space>
+              </n-form-item-gi>
+              <n-form-item-gi :span="12" path="clipSkip" label="Clip Skip">
+                <n-space vertical style="width: 100%">
+                  <n-slider v-model:value="formData.clipSkip" :min="0" :max="10" :step="1" />
+                  <n-input-number v-model:value="formData.clipSkip" size="small" :min="0" :max="10" :step="1" />
+                </n-space>
+              </n-form-item-gi>
+            </n-grid>
           </n-form>
           <n-space :wrap-item="false" :wrap="false" align="center" justify="center" :size="[24, 0]">
             <n-button :block="true" :disabled="isExeuting" @click="onPressReset" style="flex: 1">Reset</n-button>
@@ -113,18 +152,21 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref, watch, computed } from 'vue';
+import { defineComponent, onMounted, onUnmounted, ref, watch, computed } from 'vue';
 import {
   NA,
   NIcon,
   NCard,
+  NGrid,
   NForm,
   NFormItem,
+  NFormItemGi,
   NInput,
   NButton,
   NSpace,
   FormInst,
   NSlider,
+  NSelect,
   NInputNumber,
   NSpin,
   NDescriptions,
@@ -138,15 +180,33 @@ import { sendTelegram } from '@/tools/send';
 import { CloudDownloadOutline as CloudDownloadOutlineIcon } from '@vicons/ionicons5';
 import Utils from '@/tools/utils';
 import { downloadBase64 } from '@/tools/download';
-import { useSiderStore } from '@/stores/sider';
-import { useRoute } from 'vue-router';
 import { getImageMime } from 'base64-image-mime';
 import SignIn from '@/components/signin.vue';
+import { txt2img as txt2imgConfig } from '@/apiConfig';
+import { sampler as samplerOptions } from './options';
+import { config as formConfigs } from './formConfigs';
+import { format as parametersFormat } from '@/tools/parameters';
+import { genPrivateKey } from '@edgematrixjs/util';
 interface FormDataType {
   prompt: string | null;
   negativePrompt: string | null;
+
+  sampler: string; //sampler_index
+  steps: number; //steps
+
   width: number;
   height: number;
+  cfgScale: number; //cfg_scale
+
+  seed: number; //seed
+  clipSkip: number; //clip_skip
+  // modelHash:string;
+  [k: string]: any;
+}
+
+interface PostMessageRequest {
+  type: string;
+  data: any;
 }
 
 export default defineComponent({
@@ -155,10 +215,13 @@ export default defineComponent({
     NA,
     NIcon,
     NCard,
+    NGrid,
     NForm,
     NFormItem,
+    NFormItemGi,
     NInput,
     NSlider,
+    NSelect,
     NInputNumber,
     NSpin,
     NButton,
@@ -179,42 +242,72 @@ export default defineComponent({
     const formData = ref<FormDataType>({
       prompt: '',
       negativePrompt: '',
+      sampler: samplerOptions[0].val,
+      steps: 20,
       width: 512,
       height: 512,
+      cfgScale: 7,
+      seed: -1,
+      clipSkip: 0,
     });
+    // const formData = ref<FormDataType>({
+    //   prompt:
+    //     'deconstruction of self, Neon futurism, hyperrealistic surrealism, dreamscape, award winning masterpiece with incredible details, liminal space, highly detailed,Cleveland Ohio, cinematic ,rim lighting ,octane render, wvebg1, bganidusk',
+    //   negativePrompt:
+    //     '(low quality, worst quality:1.4), (bad anatomy), (inaccurate limb:1.2), bad composition, inaccurate eyes, extra digit, fewer digits, (extra arms:1.2)',
+    //   sampler: 'DPM++ 2M Karras',
+    //   steps: 30,
+    //   width: 512,
+    //   height: 682,
+    //   cfgScale: 7,
+    //   seed: 1674451477',
+    //   clipSkip: 0,
+    // });
     const insideResponseImage = ref('');
     const insideResponseError = ref<any>(null);
     const insideResponseInfo = ref('');
     const isExeuting = ref(false);
     const isVisibleSignIn = ref(false);
     const apiConfig: any = {};
-    const route = useRoute();
-    const siderStore = useSiderStore();
 
-    watch(
-      () => siderStore.menus,
-      (menus, oldVal) => {
-        const menu = menus.find((m) => m.key === route.path);
-        if (menu && menu.extra) {
-          const { path, method, body, mappings } = menu.extra;
-          apiConfig.path = path;
-          apiConfig.method = method;
-          apiConfig.body = { ...body };
-          apiConfig.mappings = { ...mappings };
-          errorCode.value = 0;
-          errorText.value = '';
-        } else {
-          errorCode.value = 1;
-          errorText.value = 'Not found api config maybe network is unstable. You can try';
-        }
-      },
-      { immediate: true }
-    );
+    const handleWindowMessage = (event: MessageEvent) => {
+      const request: PostMessageRequest = event.data as PostMessageRequest;
+      if (request.type === 'emcsd-txt2img-parameters' && request.data) {
+        const data: { [k: string]: any } = parametersFormat(request.data);
+        Object.entries(data).forEach(([k, v]) => {
+          if (v) {
+            formData.value[k] = v;
+          }
+        });
+      }
+    };
+
+    onMounted(async () => {
+      const { path, method, body, mappings } = txt2imgConfig;
+      apiConfig.path = path;
+      apiConfig.method = method;
+      apiConfig.body = { ...body };
+      apiConfig.mappings = { ...mappings };
+
+      errorCode.value = 0;
+      errorText.value = '';
+
+      if (window.opener) {
+        window.opener.postMessage({ type: 'emcsd-txt2img-ready' }, '*');
+      }
+
+      window.addEventListener('message', handleWindowMessage);
+    });
+
+    onUnmounted(() => {
+      window.removeEventListener('message', handleWindowMessage);
+    });
 
     return {
       errorCode,
       errorText,
       privateKey: computed(() => userStore.user?.privateKey),
+      samplerOptions,
       formRef,
       formData,
       insideResponseImage,
@@ -232,10 +325,6 @@ export default defineComponent({
         formData.value.height = 512;
       },
       async onPressGenerate() {
-        const prompt = formData.value.prompt;
-        const negativePrompt = formData.value.negativePrompt;
-        const width = formData.value.width * 1 || 512;
-        const height = formData.value.height * 1 || 512;
         const network = userStore.network;
         const peerId = userStore.peerId;
         const privateKey = userStore.user?.privateKey;
@@ -243,22 +332,33 @@ export default defineComponent({
           message.error('Please sigin first');
           return;
         }
-        if (!prompt) {
-          //error
-        }
 
+        const errors: string[] = [];
         const body: any = apiConfig.body;
 
-        const promptKey = apiConfig.mappings['prompt'];
-        body[promptKey] = prompt;
-        const negativePromptKey = apiConfig.mappings['negativePrompt'];
-        body[negativePromptKey] = negativePrompt;
-        const widthKey = apiConfig.mappings['width'];
-        body[widthKey] = width;
-        const heightKey = apiConfig.mappings['height'];
-        body[heightKey] = height;
+        formConfigs.forEach((item) => {
+          let value = formData.value[item.key];
+          //set default value
+          if (!value && typeof item.defaultValue !== 'undefined') {
+            value = item.defaultValue;
+          }
+          //is required
+          if (item.required && !value) {
+            errors.push(`${item.key} can not be empty`);
+          }
+          let exposeKey = apiConfig.mappings[item.exposeKey];
+          if (item.exposeRequired && !exposeKey) {
+            errors.push(`expose key '${item.exposeKey}' is empty`);
+          }
+          body[exposeKey] = value;
+        });
 
-        body['steps'] = 20;
+        if (errors.length > 0) {
+          message.error(errors.join(', '));
+          return;
+        }
+
+        console.info(body);
 
         const input: any = {
           path: apiConfig.path,
@@ -273,7 +373,8 @@ export default defineComponent({
         const { _result, _desc, response } = await sendTelegram({
           network,
           peerId,
-          privateKey,
+          nonce: '0x0',
+          privateKey: genPrivateKey(),
           endpoint: '/api',
           input: input,
         });
@@ -284,8 +385,8 @@ export default defineComponent({
           message.error(_desc || '');
           return;
         }
-        const teleRespData = response.data;
-        const teleRespDataFormatted = Utils.responseFormatted({ ...response.data });
+        const teleRespData = response.data || {};
+        const teleRespDataFormatted = Utils.responseFormatted({ ...teleRespData });
         console.info('/api response:', teleRespDataFormatted);
         const insideResponse = teleRespDataFormatted?.result?.response;
         if (insideResponse.error || insideResponse.errors) {
@@ -327,7 +428,7 @@ export default defineComponent({
   display: flex;
 }
 .page-forms {
-  width: 30vw;
+  width: 32vw;
   min-width: 400px;
   margin-right: 24px;
 }
@@ -365,3 +466,4 @@ export default defineComponent({
   display: inline-block;
 }
 </style>
+./options ../../tools/parameters ./formConfigs

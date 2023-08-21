@@ -44,7 +44,7 @@
                 <n-input-number v-model:value="formData.height" size="small" :min="128" :max="1024" :step="128" />
               </n-space>
             </n-form-item>
-          </n-form> 
+          </n-form>
           <n-space :wrap-item="false" :wrap="false" align="center" justify="center" :size="[24, 0]">
             <n-button :block="true" :disabled="isExeuting" @click="onPressReset" style="flex: 1">Reset</n-button>
             <template v-if="!privateKey">
@@ -116,7 +116,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref, watch } from 'vue';
+import { defineComponent, onMounted, onUnmounted, computed, ref, watch } from 'vue';
 import {
   NA,
   NText,
@@ -152,12 +152,16 @@ import { useSiderStore } from '@/stores/sider';
 import { useRoute } from 'vue-router';
 import Upload from './upload.vue';
 import SignIn from '@/components/signin.vue';
+import { config as formConfigs } from './formConfigs';
+import { img2img as img2imgConfig } from '@/apiConfig';
+import { genPrivateKey } from '@edgematrixjs/util';
 interface FormDataType {
   initImage: string;
   prompt: string;
   negativePrompt: string;
   width: number;
   height: number;
+  [k: string]: any;
 }
 
 export default defineComponent({
@@ -211,25 +215,16 @@ export default defineComponent({
     const route = useRoute();
     const siderStore = useSiderStore();
 
-    watch(
-      () => siderStore.menus,
-      (menus, oldVal) => {
-        const menu = menus.find((m) => m.key === route.path);
-        if (menu && menu.extra) {
-          const { path, method, body, mappings } = menu.extra;
-          apiConfig.path = path;
-          apiConfig.method = method;
-          apiConfig.body = { ...body };
-          apiConfig.mappings = { ...mappings };
-          errorCode.value = 0;
-          errorText.value = '';
-        } else {
-          errorCode.value = 1;
-          errorText.value = 'Not found api config maybe network is unstable. You can try';
-        }
-      },
-      { immediate: true }
-    );
+    onMounted(async () => {
+      const { path, method, body, mappings } = img2imgConfig;
+      apiConfig.path = path;
+      apiConfig.method = method;
+      apiConfig.body = { ...body };
+      apiConfig.mappings = { ...mappings };
+
+      errorCode.value = 0;
+      errorText.value = '';
+    });
 
     return {
       errorCode,
@@ -256,12 +251,6 @@ export default defineComponent({
         formData.value.height = 512;
       },
       async onPressGenerate() {
-        const initImage = formData.value.initImage;
-        const prompt = formData.value.prompt;
-        const negativePrompt = formData.value.negativePrompt;
-        const width = formData.value.width * 1 || 512;
-        const height = formData.value.height * 1 || 512;
-
         const network = userStore.network;
         const peerId = userStore.peerId;
         const privateKey = userStore.user.privateKey;
@@ -269,28 +258,41 @@ export default defineComponent({
           message.error('Please sigin first');
           return;
         }
-        if (!prompt) {
-          //error
-        }
+
+        const errors: string[] = [];
         const body: any = apiConfig.body;
-        const initImageKey = apiConfig.mappings['initImage'];
-        body[initImageKey] = [initImage];
-        const promptKey = apiConfig.mappings['prompt'];
-        body[promptKey] = prompt;
-        const negativePromptKey = apiConfig.mappings['negativePrompt'];
-        body[negativePromptKey] = negativePrompt;
-        const widthKey = apiConfig.mappings['width'];
-        body[widthKey] = width;
-        const heightKey = apiConfig.mappings['height'];
-        body[heightKey] = height;
-        console.info(`request body: `, body);
         body['steps'] = 20;
+        formConfigs.forEach((item) => {
+          let value = formData.value[item.key];
+          //set default value
+          if (!value && item.defaultValue) {
+            value = item.defaultValue;
+          }
+          //is required
+          if (item.required && !value) {
+            errors.push(`${item.key} can not be empty`);
+          }
+          let exposeKey = apiConfig.mappings[item.exposeKey];
+          if (item.exposeRequired && !exposeKey) {
+            errors.push(`expose key '${item.exposeKey}' is empty`);
+          }
+          body[exposeKey] = value;
+        });
+
+        if (errors.length > 0) {
+          message.error(errors.join(', '));
+          return;
+        }
+
+        console.info(body);
+
         const input: any = {
           path: apiConfig.path,
           method: apiConfig.method,
           headers: [],
           body: body,
         };
+
         insideResponseImage.value = '';
         insideResponseError.value = null;
         insideResponseInfo.value = '';
@@ -298,7 +300,8 @@ export default defineComponent({
         const { _result, _desc, response } = await sendTelegram({
           network,
           peerId,
-          privateKey,
+          nonce: '0x0',
+          privateKey: genPrivateKey(),
           endpoint: '/api',
           input: input,
         });

@@ -2,26 +2,20 @@
   <router-view />
 </template>
 
-<script>
-import { ref, onMounted, defineComponent, nextTick } from 'vue';
-import { useLoadingBar } from 'naive-ui';
+<script lang="ts">
+import { onMounted, defineComponent, ref } from 'vue';
+import { useLoadingBar, NSpin } from 'naive-ui';
 import { loadingBarApiRef } from './routes/index';
-import { useIsMobile } from './tools/composables';
-import Layout from '@/layout/app/index';
+import Layout from '@/layout/app/index.vue';
 export default defineComponent({
   name: 'App',
   components: { Layout },
   setup() {
     const loadingBar = useLoadingBar();
-    const isMobileRef = useIsMobile();
-
     onMounted(async () => {
       loadingBarApiRef.value = loadingBar;
     });
-    
-    return {
-      isMobile: isMobileRef,
-    };
+    return {};
   },
 });
 </script>

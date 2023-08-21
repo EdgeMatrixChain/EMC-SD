@@ -53,12 +53,12 @@ interface TelegramParameters {
   peerId: string;
   privateKey: string;
   endpoint: string;
+  nonce?: string;
   input?: any;
   path?: string;
   method?: string;
   body?: any;
 }
-
 
 type IDLMethod = 'POST' | 'GET';
 type IDLContentType = 'application/json';

@@ -1,22 +1,36 @@
 import { LegacyTransaction, Transaction } from '@edgematrixjs/tx';
-import { genPrivateKey, addressWith, hexToBuffer, addHexPrefix } from '@edgematrixjs/util';
+import { addressWith, hexToBuffer, addHexPrefix } from '@edgematrixjs/util';
 import { Http } from '@/tools/http';
 
 const chainId = 2;
-const debug = false;
+const debug = true;
 const totallyWaitTime = 2000;
 
-export const sendTelegram = async ({ network, peerId, privateKey, endpoint, input }: TelegramParameters) => {
-  const http = Http.getInstance();
+interface TelegramCountParameters {
+  network: string;
+  privateKey: string;
+}
+
+export const getTelegramCount = async (params: TelegramCountParameters) => {
+  const { network, privateKey } = params;
   const address = addressWith(privateKey);
+  const http = Http.getInstance();
   const nonceResp = await http.postJSON({
     url: network,
     data: { jsonrpc: '2.0', id: 1, method: 'edge_getTelegramCount', params: [address] },
   });
-  const nonce = nonceResp.data?.result;
-  if (!nonce) {
-    return { _result: 1, _desc: 'nonce is none' };
+  return nonceResp.data?.result;
+};
+
+export const sendTelegram = async (params: TelegramParameters) => {
+  const { network, nonce, peerId, privateKey, endpoint, input } = params;
+  const http = Http.getInstance();
+
+  if (debug) {
+    console.info(`sendTelegram privateKey--->\n${privateKey}`);
+    console.info(`sendTelegram publicKey--->\n${addressWith(privateKey)}`);
   }
+
   const preData = {
     peerId: peerId,
     endpoint: endpoint,
@@ -28,7 +42,7 @@ export const sendTelegram = async ({ network, peerId, privateKey, endpoint, inpu
   }
 
   const transaction = new LegacyTransaction({
-    nonce: nonce,
+    nonce: nonce || '0x0',
     gasPrice: '0x0',
     gasLimit: '0x0',
     to: '0x0000000000000000000000000000000000003001',

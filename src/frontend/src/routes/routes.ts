@@ -1,7 +1,7 @@
 export const routes = [
   {
     path: '/',
-    redirect: { path: '/home' },
+    redirect: { path: '/txt2img' },
     component: () => import('@/layout/app/index.vue'),
     children: [
       {

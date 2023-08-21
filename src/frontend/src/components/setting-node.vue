@@ -14,8 +14,7 @@
       <n-list show-divider hoverable clickable>
         <!-- <template #header> <span style="font-weight: bold">History Nodes</span> </template> -->
         <template v-for="item in nodeList">
-          <n-list-item @click.prevent.stop="onPressSelect(item)" style="padding:12px 8px;">
-            <NodeModelItem :model-name="item.modelName" />
+          <n-list-item @click.prevent.stop="onPressSelect(item)" style="padding: 12px 8px">
             <n-space align="center" :wrap-item="false" :size="[4, 0]" style="margin-top: 8px">
               <n-icon size="14">
                 <NodeIcon />
@@ -24,7 +23,7 @@
             </n-space>
           </n-list-item>
         </template>
-        <n-list-item style="padding:12px 4px;">
+        <n-list-item style="padding: 12px 4px">
           <template v-if="isAddVisible">
             <n-form ref="formRef" :model="formData" inline>
               <n-form-item
@@ -90,7 +89,6 @@ import {
   useMessage,
 } from 'naive-ui';
 import { useNodeStore, useUserStore } from '@/stores/app';
-import { useSiderStore } from '@/stores/sider';
 import {
   Hourglass as HourglassIcon,
   Close as CloseIcon,
@@ -134,7 +132,6 @@ export default defineComponent({
   setup(props, ctx) {
     const userStore = useUserStore();
     const nodeStore = useNodeStore();
-    const siderStore = useSiderStore();
 
     const formRef = ref<FormInst | null>(null);
     const formData = ref<NodeSetting>({
@@ -143,10 +140,6 @@ export default defineComponent({
     const formFeedback = ref<any>({
       nodeId: '',
     });
-    const queryNodeInfo = (nodeId: string) => {
-      const network = userStore.network;
-      return nodeStore.queryNodeInfo(network, nodeId);
-    };
     const message = useMessage();
     const exeuting = ref(false);
     const isAddVisible = ref(false);
@@ -174,13 +167,13 @@ export default defineComponent({
           return;
         }
         exeuting.value = true;
-        const { _result, data: node } = await queryNodeInfo(nodeId);
+        const { _result, data: node } = await nodeStore.queryNodeInfo(userStore.network, nodeId);
         exeuting.value = false;
         if (_result !== 0) {
           formFeedback.value.nodeId = 'Invalid node, no information was found';
           return;
         }
-        userStore.addNode({ nodeId, modelName: node.sdModelId });
+        userStore.addNode({ nodeId, modelName: node.sdModelName });
         isAddVisible.value = false;
         formData.value.nodeId = '';
       },
@@ -191,9 +184,8 @@ export default defineComponent({
         const nodeId = item.nodeId;
         userStore.setNodeId(nodeId);
         selecting.value = true;
-        const menus = await nodeStore.init(userStore.network, nodeId);
+        await nodeStore.init(userStore.network, nodeId, userStore.user.privateKey);
         selecting.value = false;
-        siderStore.initMenus(menus);
         ctx.emit('submit', { nodeId });
       },
       async onPressSubmit() {
@@ -202,9 +194,8 @@ export default defineComponent({
           await formRef.value?.validate();
           const nodeId = formData.value.nodeId;
           userStore.setNodeId(nodeId);
-          const menus = await nodeStore.init(userStore.network, nodeId);
+          await nodeStore.init(userStore.network, nodeId, userStore.user.privateKey);
           exeuting.value = false;
-          siderStore.initMenus(menus);
           ctx.emit('submit', { nodeId });
         } catch (errors) {
           console.info(errors);

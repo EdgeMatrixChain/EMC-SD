@@ -124,8 +124,8 @@ module.exports = {
       },
     },
     static: path.resolve(__dirname, 'src', frontendDirectory, 'assets'),
-    hot: true,
+    hot: false,
     watchFiles: [path.resolve(__dirname, 'src', frontendDirectory)],
-    liveReload: true,
+    liveReload: false,
   },
 };

@@ -1,18 +1,24 @@
 import { nextTick } from 'vue';
-import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router';
+import { createRouter, createWebHistory, createWebHashHistory, Router } from 'vue-router';
 import { useUserStore } from '@/stores/app';
+
+let instance: Router;
+
+export function getInstance() {
+  return instance;
+}
 
 export const loadingBarApiRef: any = {};
 
 export default function createAppRouter(routes: any) {
   console.info(`create app router base url is ${__PUBLIC_PATH__}`);
 
-  const router = createRouter({
+  instance = createRouter({
     history: createWebHashHistory(process.env.BASE_URL),
     routes,
   });
 
-  router.beforeEach(function (to, from, next) {
+  instance.beforeEach(function (to, from, next) {
     if (!from || to.path !== from.path) {
       if (loadingBarApiRef.value) {
         loadingBarApiRef.value.start();
@@ -23,7 +29,7 @@ export default function createAppRouter(routes: any) {
     next();
   });
 
-  router.afterEach(function (to, from) {
+  instance.afterEach(function (to, from) {
     if (!from || to.path !== from.path) {
       if (loadingBarApiRef.value) {
         loadingBarApiRef.value.finish();
@@ -37,5 +43,5 @@ export default function createAppRouter(routes: any) {
     }
   });
 
-  return router;
+  return instance;
 }

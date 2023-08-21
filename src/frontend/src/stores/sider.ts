@@ -1,9 +1,7 @@
 import { ref, h } from 'vue';
 import { defineStore } from 'pinia';
-import { NTag } from 'naive-ui';
 import type { MenuOption } from 'naive-ui';
 import { RouterLink } from 'vue-router';
-import Utils from '@/tools/utils';
 
 type SiderMenuOption = {
   label: string;
@@ -38,11 +36,13 @@ function renderMenuItemLink({ label, to, key }: MenuItemRouterLink): MenuOption 
 export const useSiderStore = defineStore('sider', () => {
   const menus = ref<Array<any>>([]);
   const siderMenus = ref<Array<any>>([]);
-
+  const loading = ref(false);
   return {
     menus,
     siderMenus,
+    loading,
     initMenus(list: Array<SiderMenuOption>) {
+      loading.value = true;
       menus.value = list;
       const _siderMenus: MenuOption[] = [];
       list.forEach((item: any, index: number) => {
@@ -67,6 +67,7 @@ export const useSiderStore = defineStore('sider', () => {
         //   props: { style: { marginLeft: '16px' } },
         // });
       });
+      loading.value = false;
       siderMenus.value = _siderMenus;
     },
   };

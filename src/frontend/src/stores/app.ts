@@ -2,8 +2,8 @@ import { ref, h } from 'vue';
 import { defineStore } from 'pinia';
 import Utils from '@/tools/utils';
 import { sendTelegram } from '@/tools/send';
-import { useSiderStore } from './sider';
 import { genPrivateKey, addressWith } from '@edgematrixjs/util';
+
 export const useUserStore = defineStore('user', () => {
   const title = ref('');
   const user = ref({
@@ -17,7 +17,6 @@ export const useUserStore = defineStore('user', () => {
   const peerId = ref('16Uiu2HAm14xAsnJHDqnQNQ2Qqo1SapdRk9j8mBKY6mghVDP9B9u5');
   const nodeList = ref<any[]>([]);
   const nodeStore = useNodeStore();
-  const siderStore = useSiderStore();
   return {
     user,
     title,
@@ -30,10 +29,10 @@ export const useUserStore = defineStore('user', () => {
     async setNodeId(_nodeId: string) {
       Utils.setLocalStorage('emcsd.nodeid', _nodeId);
       peerId.value = _nodeId;
-      if (network.value && _nodeId && user.value.privateKey) {
-        const menus = await nodeStore.init(network.value, _nodeId, user.value.privateKey);
-        siderStore.initMenus(menus);
-      }
+      // if (network.value && _nodeId && user.value.privateKey) {
+      //   const menus = await nodeStore.init(network.value, _nodeId, user.value.privateKey);
+      //   siderStore.initMenus(menus);
+      // }
       return { _result: 0, nodeId: _nodeId };
     },
     async addNode(node: any) {
@@ -63,8 +62,7 @@ export const useUserStore = defineStore('user', () => {
       Utils.setLocalStorage('emcsd.user', _user);
       user.value = _user;
       if (network.value && peerId.value && privateKey) {
-        const menus = await nodeStore.init(network.value, peerId.value, privateKey);
-        siderStore.initMenus(menus);
+        await nodeStore.init(network.value, peerId.value, privateKey);
       }
       return { _result: 0, user: _user };
     },
@@ -117,6 +115,7 @@ export const useUserStore = defineStore('user', () => {
     },
   };
 });
+
 export const useNodeStore = defineStore('node', () => {
   //node info
   const name = ref('');
@@ -124,14 +123,14 @@ export const useNodeStore = defineStore('node', () => {
   const runTime = ref('');
   const version = ref('');
   const tags = ref<any[]>([]);
-  const sdModelId = ref('');
+  const sdModelName = ref('');
   const idl = ref<any[]>([]);
-  const defaultPrivatekey = genPrivateKey();
+  const infoLoading = ref(false);
   const queryNodeInfo = async (_network: string, _nodeId: string, _privateKey?: string) => {
     const { _result, _desc, response } = await sendTelegram({
       network: _network,
       peerId: _nodeId,
-      privateKey: _privateKey || defaultPrivatekey,
+      privateKey: _privateKey || genPrivateKey(),
       endpoint: '/info',
     });
     //response data
@@ -140,7 +139,7 @@ export const useNodeStore = defineStore('node', () => {
     let _runTime = '';
     let _version = '';
     let _tags: any[] = [];
-    let _sdModelId = '';
+    let _sdModelName = '';
     if (_result === 0) {
       const responseDataFormatted = Utils.responseFormatted(response.data);
       const { response: insideResponse } = responseDataFormatted.result || {};
@@ -151,7 +150,11 @@ export const useNodeStore = defineStore('node', () => {
       _runTime = uptime ? `about ${Math.round(uptime / 1000 / 60)} minutes` : '';
       _version = version ? version : '';
       _tags = typeof tag === 'string' ? tag.split(',') : [];
-      _sdModelId = typeof name === 'string' && name.startsWith('SD-') ? name.replace('SD-', '') : '';
+
+      const { data: sdInfo } = await queryNodeSDInfo(_network, _nodeId, _privateKey);
+      if (sdInfo && sdInfo.modelName) {
+        _sdModelName = sdInfo.modelName;
+      }
     }
     return {
       _result,
@@ -161,15 +164,44 @@ export const useNodeStore = defineStore('node', () => {
         runTime: _runTime,
         version: _version,
         tags: _tags,
-        sdModelId: _sdModelId,
+        sdModelName: _sdModelName,
       },
     };
   };
+
+  const queryNodeSDInfo = async (_network: string, _nodeId: string, _privateKey?: string) => {
+    const input: any = {
+      path: '/sdapi/v1/options',
+      method: 'GET',
+      headers: [],
+    };
+
+    const { _result, _desc, response } = await sendTelegram({
+      network: _network,
+      peerId: _nodeId,
+      nonce: '0x0',
+      privateKey: genPrivateKey(),
+      endpoint: '/api',
+      input: input,
+    });
+    let info: any = {};
+    if (_result === 0) {
+      const responseDataFormatted = Utils.responseFormatted(response.data);
+      const { response: insideResponse } = responseDataFormatted.result || {};
+      console.info(`sd-info response: `, insideResponse);
+      info = insideResponse || {};
+      if (info.sd_model_checkpoint) {
+        info.modelName = info.sd_model_checkpoint.split('.')[0];
+      }
+    }
+    return { _result, data: info };
+  };
+
   const queryNodeIDL = async (_network: string, _nodeId: string, _privateKey?: string) => {
     const { _result, _desc, response } = await sendTelegram({
       network: _network,
       peerId: _nodeId,
-      privateKey: _privateKey || defaultPrivatekey,
+      privateKey: _privateKey || genPrivateKey(),
       endpoint: '/idl',
     });
     let _idl = [];
@@ -185,6 +217,7 @@ export const useNodeStore = defineStore('node', () => {
     }
     return { _result, data: { idl: _idl } };
   };
+
   const convertMenusWithIDL = (idl: any[]): Array<any> => {
     const menus: Array<any> = [
       { label: 'Text -> Image', key: '/txt2img', desc: '', to: { name: 'txt2img' } },
@@ -196,6 +229,7 @@ export const useNodeStore = defineStore('node', () => {
     });
 
     const idlMapper = {} as { [key: string]: any };
+
     idl.forEach((item) => {
       const { bundles, ...o } = item;
       if (!Array.isArray(bundles)) return;
@@ -239,23 +273,20 @@ export const useNodeStore = defineStore('node', () => {
     runTime,
     version,
     tags,
-    sdModelId,
+    sdModelName,
     idl,
+    infoLoading,
     queryNodeInfo,
     async init(_network: string, _nodeId: string, _privateKey?: string) {
+      infoLoading.value = true;
       const { data: nodeInfo } = await queryNodeInfo(_network, _nodeId, _privateKey);
       name.value = nodeInfo.name;
       startUpTime.value = nodeInfo.startUpTime;
       runTime.value = nodeInfo.runTime;
       version.value = nodeInfo.version;
       tags.value = nodeInfo.tags;
-      sdModelId.value = nodeInfo.sdModelId;
-
-      const { data: idlInfo } = await queryNodeIDL(_network, _nodeId, _privateKey);
-      const _idl = idlInfo.idl || [];
-      idl.value = _idl;
-      const menus = convertMenusWithIDL(_idl);
-      return menus;
+      sdModelName.value = nodeInfo.sdModelName;
+      infoLoading.value = false;
     },
   };
 });
